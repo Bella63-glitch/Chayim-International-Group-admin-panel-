@@ -183,37 +183,49 @@
         return;
       }
 
-      // Prepare the file upload via FormData
-      const formData = new FormData();
-      formData.append("file", imageFile);
+      // Generate a unique file name
       const fileName = Date.now() + "_" + imageFile.name;
-      
-      try {
-        // Upload image to Backendless Files (assuming a "properties" folder exists)
-        const uploadResponse = await fetch(`https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/properties/${fileName}`, {
-          method: "POST",
-          body: formData
-        });
-        if (!uploadResponse.ok) throw new Error("Image upload failed");
+      // Note: Encode space as %20 in the folder name
+      const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/properties%20images/${fileName}`;
+      console.log("Uploading file...");
+      console.log("Upload URL:", uploadUrl);
 
-        // Construct the image URL
-        const imageUrl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/properties/${fileName}`;
+      try {
+        // Upload image as raw binary using PUT
+        const uploadResponse = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": imageFile.type
+          },
+          body: imageFile
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Image upload failed with status " + uploadResponse.status);
+        }
+        // Construct the image URL (using backendlessappcontent.com domain)
+        const imageUrl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/properties%20images/${fileName}`;
+        console.log("Image uploaded successfully. URL:", imageUrl);
 
         // Save the property details along with the image URL
         const newProperty = { category, description, imageurl: imageUrl, location, title, price };
+        console.log("Saving property:", newProperty);
 
         const saveResponse = await fetch(BASE_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newProperty)
         });
-        if (!saveResponse.ok) throw new Error("Property save failed");
+
+        if (!saveResponse.ok) {
+          throw new Error("Property save failed with status " + saveResponse.status);
+        }
 
         alert("Property added successfully!");
         this.reset();
         fetchProperties();
       } catch (err) {
-        console.error(err);
+        console.error("Error uploading image or saving property:", err);
         alert("Error uploading image or saving property.");
       }
     });
@@ -223,3 +235,7 @@
   </script>
 </body>
 </html>
+
+
+
+
