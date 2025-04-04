@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real Estate Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      overflow-x: hidden;
+    }
+    /* Sidebar styling */
+    #sidebar {
+      min-width: 250px;
+      max-width: 250px;
+      background: #f8f9fa;
+      border-right: 1px solid #dee2e6;
+    }
+    #sidebar .nav-link {
+      color: #333;
+      padding: 15px 20px;
+      border-bottom: 1px solid #eaeaea;
+      cursor: pointer;
+    }
+    #sidebar .nav-link.active {
+      background: #343a40;
+      color: #fff;
+    }
+    /* Content area */
+    #content {
+      padding: 20px;
+      width: 100%;
+    }
+    .navbar {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="d-flex">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <h4 class="text-center py-3 bg-dark text-white mb-0">Admin Panel</h4>
+      <nav class="nav flex-column">
+        <a class="nav-link active" data-bs-toggle="pill" href="#dashboard">Dashboard</a>
+        <a class="nav-link" data-bs-toggle="pill" href="#properties">Properties</a>
+      </nav>
+    </div>
+    <!-- Main Content -->
+    <div id="content">
+      <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <div class="container-fluid">
+          <span class="navbar-brand mb-0 h1">Real Estate Admin</span>
+          <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto">
+              <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Profile</a></li>
+              <li class="nav-item"><a class="nav-link" href="#">Logout</a></li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+
+      <div class="tab-content mt-4">
+        <!-- Dashboard Section -->
+        <div class="tab-pane fade show active" id="dashboard">
+          <h2>Dashboard</h2>
+          <p>Welcome to your Real Estate Admin Dashboard. Use the sidebar to navigate.</p>
+        </div>
+        
+        <!-- Properties Section -->
+        <div class="tab-pane fade" id="properties">
+          <h2>Properties</h2>
+          <!-- Properties List -->
+          <div class="card mb-4">
+            <div class="card-header">Properties List</div>
+            <div class="card-body">
+              <table class="table table-striped" id="propertiesTable">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Imageurl</th>
+                    <th>Location</th>
+                    <th>Title</th>
+                    <th>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Property rows will be injected here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <!-- Form to Add New Property -->
+          <div class="card">
+            <div class="card-header">Add New Property</div>
+            <div class="card-body">
+              <form id="propertyForm">
+                <div class="mb-3">
+                  <label for="propertyCategory" class="form-label">Category</label>
+                  <input type="text" class="form-control" id="propertyCategory" placeholder="Enter category" required>
+                </div>
+                <div class="mb-3">
+                  <label for="propertyDescription" class="form-label">Description</label>
+                  <textarea class="form-control" id="propertyDescription" placeholder="Enter description" rows="3" required></textarea>
+                </div>
+                <div class="mb-3">
+                  <label for="propertyImageurl" class="form-label">Image URL</label>
+                  <input type="url" class="form-control" id="propertyImageurl" placeholder="Enter image URL" required>
+                </div>
+                <div class="mb-3">
+                  <label for="propertyLocation" class="form-label">Location</label>
+                  <input type="text" class="form-control" id="propertyLocation" placeholder="Enter location" required>
+                </div>
+                <div class="mb-3">
+                  <label for="propertyTitle" class="form-label">Title</label>
+                  <input type="text" class="form-control" id="propertyTitle" placeholder="Enter title" required>
+                </div>
+                <div class="mb-3">
+                  <label for="propertyPrice" class="form-label">Price</label>
+                  <input type="number" class="form-control" id="propertyPrice" placeholder="Enter price" required>
+                </div>
+                <button type="submit" class="btn btn-success">Add Property</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap Bundle with Popper -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Backendless credentials
+    const APP_ID = 'D816E27F-267C-45B1-9932-AE452537BA0E';
+    const REST_API_KEY = '43FDF951-CA7C-4AA1-8CE5-EAEFE8AABBBB';
+    // The table name is assumed to be "Properties"
+    const BASE_URL = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/data/Properties`;
+
+    // Fetch and display properties
+    function fetchProperties() {
+      fetch(BASE_URL)
+        .then(response => response.json())
+        .then(data => {
+          const tbody = document.querySelector("#propertiesTable tbody");
+          tbody.innerHTML = "";
+          data.forEach(property => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${property.category || ''}</td>
+              <td>${property.description || ''}</td>
+              <td>${property.imageurl ? `<a href="${property.imageurl}" target="_blank">View Image</a>` : ''}</td>
+              <td>${property.location || ''}</td>
+              <td>${property.title || ''}</td>
+              <td>${property.price ? "$" + property.price : ''}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        })
+        .catch(error => {
+          console.error("Error fetching properties:", error);
+        });
+    }
+
+    // Handle new property form submission
+    document.getElementById("propertyForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const category = document.getElementById("propertyCategory").value;
+      const description = document.getElementById("propertyDescription").value;
+      const imageurl = document.getElementById("propertyImageurl").value;
+      const location = document.getElementById("propertyLocation").value;
+      const title = document.getElementById("propertyTitle").value;
+      const price = parseFloat(document.getElementById("propertyPrice").value);
+
+      const newProperty = { category, description, imageurl, location, title, price };
+
+      fetch(BASE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newProperty)
+      })
+      .then(response => response.json())
+      .then(result => {
+        alert("New property added!");
+        this.reset();
+        fetchProperties();
+      })
+      .catch(error => {
+        console.error("Error adding property:", error);
+        alert("There was an error adding the property.");
+      });
+    });
+
+    // Fetch properties on initial load
+    document.addEventListener("DOMContentLoaded", fetchProperties);
+  </script>
+
+</body></html>
