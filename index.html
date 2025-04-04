@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -107,8 +107,8 @@
                   <textarea class="form-control" id="propertyDescription" placeholder="Enter description" rows="3" required></textarea>
                 </div>
                 <div class="mb-3">
-                  <label for="propertyImageurl" class="form-label">Image URL</label>
-                  <input type="url" class="form-control" id="propertyImageurl" placeholder="Enter image URL" required>
+                  <label for="propertyImage" class="form-label">Upload Image</label>
+                  <input type="file" class="form-control" id="propertyImage" accept="image/*" required>
                 </div>
                 <div class="mb-3">
                   <label for="propertyLocation" class="form-label">Location</label>
@@ -145,9 +145,11 @@
       fetch(BASE_URL)
         .then(response => response.json())
         .then(data => {
+          // Check if data is an array; if not, try data.data
+          const properties = Array.isArray(data) ? data : (data.data || []);
           const tbody = document.querySelector("#propertiesTable tbody");
           tbody.innerHTML = "";
-          data.forEach(property => {
+          properties.forEach(property => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
               <td>${property.category || ''}</td>
@@ -165,39 +167,59 @@
         });
     }
 
-    // Handle new property form submission
-    document.getElementById("propertyForm").addEventListener("submit", function(e) {
+    // Handle new property form submission with image upload
+    document.getElementById("propertyForm").addEventListener("submit", async function(e) {
       e.preventDefault();
+
       const category = document.getElementById("propertyCategory").value;
       const description = document.getElementById("propertyDescription").value;
-      const imageurl = document.getElementById("propertyImageurl").value;
       const location = document.getElementById("propertyLocation").value;
       const title = document.getElementById("propertyTitle").value;
       const price = parseFloat(document.getElementById("propertyPrice").value);
+      const imageFile = document.getElementById("propertyImage").files[0];
 
-      const newProperty = { category, description, imageurl, location, title, price };
+      if (!imageFile) {
+        alert("Please select an image.");
+        return;
+      }
 
-      fetch(BASE_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(newProperty)
-      })
-      .then(response => response.json())
-      .then(result => {
-        alert("New property added!");
+      // Prepare the file upload via FormData
+      const formData = new FormData();
+      formData.append("file", imageFile);
+      const fileName = Date.now() + "_" + imageFile.name;
+      
+      try {
+        // Upload image to Backendless Files (assuming a "properties" folder exists)
+        const uploadResponse = await fetch(`https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/properties/${fileName}`, {
+          method: "POST",
+          body: formData
+        });
+        if (!uploadResponse.ok) throw new Error("Image upload failed");
+
+        // Construct the image URL
+        const imageUrl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/properties/${fileName}`;
+
+        // Save the property details along with the image URL
+        const newProperty = { category, description, imageurl: imageUrl, location, title, price };
+
+        const saveResponse = await fetch(BASE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newProperty)
+        });
+        if (!saveResponse.ok) throw new Error("Property save failed");
+
+        alert("Property added successfully!");
         this.reset();
         fetchProperties();
-      })
-      .catch(error => {
-        console.error("Error adding property:", error);
-        alert("There was an error adding the property.");
-      });
+      } catch (err) {
+        console.error(err);
+        alert("Error uploading image or saving property.");
+      }
     });
 
     // Fetch properties on initial load
     document.addEventListener("DOMContentLoaded", fetchProperties);
   </script>
-
-</body></html>
+</body>
+</html>
