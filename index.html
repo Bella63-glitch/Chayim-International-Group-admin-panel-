@@ -97,8 +97,9 @@
   <!-- Bootstrap JS bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    const APP_ID       = 'D816E27F-267C-45B1-9932-AE452537BA0E';
-    const REST_API_KEY = '43FDF951-CA7C-4AA1-8CE5-EAEFE8AABBBB';
+    // ←– swapped to match your console
+    const APP_ID       = '43FDF951-CA7C-4AA1-8CE5-EAEFE8AABBBB';
+    const REST_API_KEY = 'D816E27F-267C-45B1-9932-AE452537BA0E';
     const BASE_URL     = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/data/Properties`;
     const FILE_FOLDER  = 'propertiesimages';
 
@@ -130,7 +131,6 @@
     document.getElementById('propertyForm').addEventListener('submit', async function(e) {
       e.preventDefault();
 
-      // grab values via IDs
       const cat  = document.getElementById('propertyCategory').value.trim();
       const desc = document.getElementById('propertyDescription').value.trim();
       const loc  = document.getElementById('propertyLocation').value.trim();
@@ -143,8 +143,7 @@
       const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/${FILE_FOLDER}/${fileName}`;
 
       try {
-        // upload image
-        const fd = new FormData();
+        const fd    = new FormData();
         fd.append('file', file);
         const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
         if (!upRes.ok) {
@@ -153,9 +152,8 @@
           return alert(`Image upload failed (${upRes.status}): ${txt}`);
         }
         const upData = await upRes.json();
-        const imgUrl = upData.fileURL; // <-- use returned URL
+        const imgUrl = upData.fileURL;
 
-        // save property record
         const newProp = { category: cat, description: desc, imageurl: imgUrl, location: loc, title: tit, price: pri };
         const saveRes = await fetch(BASE_URL, {
           method: 'POST',
