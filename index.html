@@ -185,8 +185,8 @@
 
       // Generate a unique file name
       const fileName = Date.now() + "_" + imageFile.name;
-      // Note: Encode space as %20 in the folder name
-      const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/properties%20images/${fileName}`;
+      // No spacing in the folder name: "propertiesimages"
+      const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/propertiesimages/${fileName}`;
       console.log("Uploading file...");
       console.log("Upload URL:", uploadUrl);
 
@@ -204,7 +204,7 @@
           throw new Error("Image upload failed with status " + uploadResponse.status);
         }
         // Construct the image URL (using backendlessappcontent.com domain)
-        const imageUrl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/properties%20images/${fileName}`;
+        const imageUrl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/propertiesimages/${fileName}`;
         console.log("Image uploaded successfully. URL:", imageUrl);
 
         // Save the property details along with the image URL
@@ -235,7 +235,3 @@
   </script>
 </body>
 </html>
-
-
-
-
