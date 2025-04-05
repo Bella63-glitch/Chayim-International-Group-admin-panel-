@@ -49,7 +49,7 @@
               <table class="table table-striped" id="propertiesTable">
                 <thead>
                   <tr>
-                    <th>Category</th><th>Description</th><th>Imageurl</th>
+                    <th>Category</th><th>Description</th><th>Image</th>
                     <th>Location</th><th>Title</th><th>Price</th>
                   </tr>
                 </thead>
@@ -94,6 +94,7 @@
     </div>
   </div>
 
+  <!-- Bootstrap JS bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     const APP_ID       = 'D816E27F-267C-45B1-9932-AE452537BA0E';
@@ -105,71 +106,74 @@
       try {
         const res = await fetch(BASE_URL);
         const json = await res.json();
-        const list = Array.isArray(json) ? json : (json.data||[]);
+        const list = Array.isArray(json) ? json : (json.data || []);
         const tbody = document.querySelector('#propertiesTable tbody');
         tbody.innerHTML = '';
         list.forEach(p => {
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${p.category||''}</td>
-            <td>${p.description||''}</td>
-            <td>${p.imageurl?`<a href="${p.imageurl}" target="_blank">View</a>`:''}</td>
-            <td>${p.location||''}</td>
-            <td>${p.title||''}</td>
-            <td>${p.price?`$${p.price}`:''}</td>
+            <td>${p.category || ''}</td>
+            <td>${p.description || ''}</td>
+            <td>${p.imageurl ? `<a href="${p.imageurl}" target="_blank">View</a>` : ''}</td>
+            <td>${p.location || ''}</td>
+            <td>${p.title || ''}</td>
+            <td>${p.price ? '$' + p.price : ''}</td>
           `;
           tbody.appendChild(tr);
         });
-      } catch(e) {
+      } catch (e) {
         console.error('Fetch error:', e);
-        alert('Error fetching properties: '+e.message);
+        alert('Error fetching properties: ' + e.message);
       }
     }
 
-    document.getElementById('propertyForm').addEventListener('submit', async function(e){
+    document.getElementById('propertyForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const cat  = this.propertyCategory.value;
-      const desc = this.propertyDescription.value;
-      const loc  = this.propertyLocation.value;
-      const tit  = this.propertyTitle.value;
-      const pri  = parseFloat(this.propertyPrice.value);
-      const file = this.propertyImage.files[0];
-      if(!file) return alert('Select an image');
 
-      const fileName  = Date.now()+'_'+file.name;
+      // grab values via IDs
+      const cat  = document.getElementById('propertyCategory').value.trim();
+      const desc = document.getElementById('propertyDescription').value.trim();
+      const loc  = document.getElementById('propertyLocation').value.trim();
+      const tit  = document.getElementById('propertyTitle').value.trim();
+      const pri  = parseFloat(document.getElementById('propertyPrice').value);
+      const file = document.getElementById('propertyImage').files[0];
+      if (!file) return alert('Please select an image.');
+
+      const fileName  = Date.now() + '_' + file.name;
       const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/${FILE_FOLDER}/${fileName}`;
 
       try {
-        // POST with FormData
+        // upload image
         const fd = new FormData();
         fd.append('file', file);
-        const upRes = await fetch(uploadUrl, { method:'POST', body:fd });
-        if(!upRes.ok) {
+        const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
+        if (!upRes.ok) {
           const txt = await upRes.text();
           console.error('Upload failed:', upRes.status, txt);
-          return alert(`Upload failed (${upRes.status}): ${txt}`);
+          return alert(`Image upload failed (${upRes.status}): ${txt}`);
         }
-        const imgUrl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/${FILE_FOLDER}/${fileName}`;
+        const upData = await upRes.json();
+        const imgUrl = upData.fileURL; // <-- use returned URL
 
-        // Save record
-        const newProp = { category:cat, description:desc, imageurl:imgUrl, location:loc, title:tit, price:pri };
+        // save property record
+        const newProp = { category: cat, description: desc, imageurl: imgUrl, location: loc, title: tit, price: pri };
         const saveRes = await fetch(BASE_URL, {
-          method:'POST',
-          headers:{'Content-Type':'application/json'},
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newProp)
         });
-        if(!saveRes.ok) {
+        if (!saveRes.ok) {
           const txt = await saveRes.text();
           console.error('Save failed:', saveRes.status, txt);
           return alert(`Save failed (${saveRes.status}): ${txt}`);
         }
 
-        alert('Property added!');
+        alert('Property added successfully!');
         this.reset();
         fetchProperties();
-      } catch(err) {
+      } catch (err) {
         console.error('Unexpected error:', err);
-        alert('Unexpected error: '+err.message);
+        alert('Unexpected error: ' + err.message);
       }
     });
 
