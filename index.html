@@ -13,6 +13,7 @@
     #sidebar .nav-link.active { background:#343a40; color:#fff; }
     #content { padding:20px; width:100%; }
     .navbar { margin-bottom:20px; }
+    #imagePreview img { max-width:200px; margin-top:10px; }
   </style>
 </head>
 <body>
@@ -50,7 +51,7 @@
                 <thead>
                   <tr>
                     <th>Category</th><th>Description</th><th>Image</th>
-                    <th>Location</th><th>Title</th><th>Price</th>
+                    <th>Location</th><th>Title</th><th>Price</th><th>Actions</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -58,7 +59,7 @@
             </div>
           </div>
           <div class="card">
-            <div class="card-header">Add New Property</div>
+            <div class="card-header">Add / Edit Property</div>
             <div class="card-body">
               <form id="propertyForm">
                 <div class="mb-3">
@@ -71,7 +72,8 @@
                 </div>
                 <div class="mb-3">
                   <label class="form-label">Upload Image</label>
-                  <input type="file" id="propertyImage" class="form-control" accept="image/*" required>
+                  <input type="file" id="propertyImage" class="form-control" accept="image/*">
+                  <div id="imagePreview"></div>
                 </div>
                 <div class="mb-3">
                   <label class="form-label">Location</label>
@@ -85,7 +87,8 @@
                   <label class="form-label">Price</label>
                   <input type="number" id="propertyPrice" class="form-control" required>
                 </div>
-                <button type="submit" class="btn btn-success">Add Property</button>
+                <button type="submit" id="submitBtn" class="btn btn-success">Add Property</button>
+                <button type="button" id="cancelEditBtn" class="btn btn-secondary ms-2" style="display:none;">Cancel</button>
               </form>
             </div>
           </div>
@@ -97,15 +100,18 @@
   <!-- Bootstrap JS bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // ←– swapped to match your console
+    // ←– your Backendless keys, swapped to match your console
     const APP_ID       = '43FDF951-CA7C-4AA1-8CE5-EAEFE8AABBBB';
     const REST_API_KEY = 'D816E27F-267C-45B1-9932-AE452537BA0E';
     const BASE_URL     = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/data/Properties`;
     const FILE_FOLDER  = 'propertiesimages';
 
+    let currentEditId   = null;
+    let editingImageUrl = '';
+
     async function fetchProperties() {
       try {
-        const res = await fetch(BASE_URL);
+        const res  = await fetch(BASE_URL);
         const json = await res.json();
         const list = Array.isArray(json) ? json : (json.data || []);
         const tbody = document.querySelector('#propertiesTable tbody');
@@ -119,6 +125,10 @@
             <td>${p.location || ''}</td>
             <td>${p.title || ''}</td>
             <td>${p.price ? '$' + p.price : ''}</td>
+            <td>
+              <button class="btn btn-sm btn-primary me-1" onclick="startEdit('${p.objectId}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteProperty('${p.objectId}')">Delete</button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
@@ -128,50 +138,113 @@
       }
     }
 
+    async function deleteProperty(id) {
+      if (!confirm('Delete this property?')) return;
+      try {
+        const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(await res.text());
+        alert('Property deleted.');
+        if (currentEditId === id) resetForm();
+        fetchProperties();
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Delete failed: ' + err.message);
+      }
+    }
+
+    async function startEdit(id) {
+      try {
+        const res  = await fetch(`${BASE_URL}/${id}`);
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        // populate form
+        document.getElementById('propertyCategory').value    = data.category;
+        document.getElementById('propertyDescription').value = data.description;
+        document.getElementById('propertyLocation').value    = data.location;
+        document.getElementById('propertyTitle').value       = data.title;
+        document.getElementById('propertyPrice').value       = data.price;
+        editingImageUrl = data.imageurl || '';
+        document.getElementById('imagePreview').innerHTML = editingImageUrl
+          ? `<p>Current Image:</p><img src="${editingImageUrl}" alt="">`
+          : '';
+        currentEditId = id;
+        document.getElementById('submitBtn').textContent     = 'Update Property';
+        document.getElementById('cancelEditBtn').style.display = 'inline-block';
+        // switch to Properties tab if needed
+        document.querySelector('a[href="#properties"]').click();
+      } catch (err) {
+        console.error('Edit load error:', err);
+        alert('Could not load property: ' + err.message);
+      }
+    }
+
+    document.getElementById('cancelEditBtn').addEventListener('click', resetForm);
+
+    function resetForm() {
+      currentEditId = null;
+      editingImageUrl = '';
+      document.getElementById('propertyForm').reset();
+      document.getElementById('imagePreview').innerHTML = '';
+      document.getElementById('submitBtn').textContent = 'Add Property';
+      document.getElementById('cancelEditBtn').style.display = 'none';
+    }
+
     document.getElementById('propertyForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-
       const cat  = document.getElementById('propertyCategory').value.trim();
       const desc = document.getElementById('propertyDescription').value.trim();
       const loc  = document.getElementById('propertyLocation').value.trim();
       const tit  = document.getElementById('propertyTitle').value.trim();
       const pri  = parseFloat(document.getElementById('propertyPrice').value);
       const file = document.getElementById('propertyImage').files[0];
-      if (!file) return alert('Please select an image.');
-
-      const fileName  = Date.now() + '_' + file.name;
-      const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/${FILE_FOLDER}/${fileName}`;
 
       try {
-        const fd    = new FormData();
-        fd.append('file', file);
-        const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
-        if (!upRes.ok) {
-          const txt = await upRes.text();
-          console.error('Upload failed:', upRes.status, txt);
-          return alert(`Image upload failed (${upRes.status}): ${txt}`);
-        }
-        const upData = await upRes.json();
-        const imgUrl = upData.fileURL;
-
-        const newProp = { category: cat, description: desc, imageurl: imgUrl, location: loc, title: tit, price: pri };
-        const saveRes = await fetch(BASE_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newProp)
-        });
-        if (!saveRes.ok) {
-          const txt = await saveRes.text();
-          console.error('Save failed:', saveRes.status, txt);
-          return alert(`Save failed (${saveRes.status}): ${txt}`);
+        // decide image URL
+        let imgUrl = editingImageUrl;
+        if (file) {
+          const fileName  = Date.now() + '_' + file.name;
+          const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/${FILE_FOLDER}/${fileName}`;
+          const fd = new FormData();
+          fd.append('file', file);
+          const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
+          if (!upRes.ok) throw new Error(await upRes.text());
+          const upData = await upRes.json();
+          imgUrl = upData.fileURL;
         }
 
-        alert('Property added successfully!');
-        this.reset();
+        const payload = {
+          category:    cat,
+          description: desc,
+          imageurl:    imgUrl,
+          location:    loc,
+          title:       tit,
+          price:       pri
+        };
+
+        let res;
+        if (currentEditId) {
+          // update
+          res = await fetch(`${BASE_URL}/${currentEditId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          // create
+          res = await fetch(BASE_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        }
+
+        if (!res.ok) throw new Error(await res.text());
+        alert(currentEditId ? 'Property updated!' : 'Property added!');
+        resetForm();
         fetchProperties();
       } catch (err) {
-        console.error('Unexpected error:', err);
-        alert('Unexpected error: ' + err.message);
+        console.error('Save error:', err);
+        alert('Save failed: ' + err.message);
       }
     });
 
