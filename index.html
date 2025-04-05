@@ -7,34 +7,19 @@
   <!-- Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body {
-      overflow-x: hidden;
-    }
-    /* Sidebar styling */
+    body { overflow-x: hidden; }
     #sidebar {
-      min-width: 250px;
-      max-width: 250px;
-      background: #f8f9fa;
-      border-right: 1px solid #dee2e6;
+      min-width: 250px; max-width: 250px;
+      background: #f8f9fa; border-right: 1px solid #dee2e6;
     }
     #sidebar .nav-link {
-      color: #333;
-      padding: 15px 20px;
-      border-bottom: 1px solid #eaeaea;
-      cursor: pointer;
+      color: #333; padding: 15px 20px; border-bottom: 1px solid #eaeaea; cursor: pointer;
     }
     #sidebar .nav-link.active {
-      background: #343a40;
-      color: #fff;
+      background: #343a40; color: #fff;
     }
-    /* Content area */
-    #content {
-      padding: 20px;
-      width: 100%;
-    }
-    .navbar {
-      margin-bottom: 20px;
-    }
+    #content { padding: 20px; width: 100%; }
+    .navbar { margin-bottom: 20px; }
   </style>
 </head>
 <body>
@@ -52,27 +37,23 @@
       <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
         <div class="container-fluid">
           <span class="navbar-brand mb-0 h1">Real Estate Admin</span>
-          <div class="collapse navbar-collapse">
-            <ul class="navbar-nav ms-auto">
-              <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Profile</a></li>
-              <li class="nav-item"><a class="nav-link" href="#">Logout</a></li>
-            </ul>
-          </div>
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Profile</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Logout</a></li>
+          </ul>
         </div>
       </nav>
 
       <div class="tab-content mt-4">
-        <!-- Dashboard Section -->
+        <!-- Dashboard -->
         <div class="tab-pane fade show active" id="dashboard">
           <h2>Dashboard</h2>
           <p>Welcome to your Real Estate Admin Dashboard. Use the sidebar to navigate.</p>
         </div>
-        
-        <!-- Properties Section -->
+        <!-- Properties -->
         <div class="tab-pane fade" id="properties">
           <h2>Properties</h2>
-          <!-- Properties List -->
           <div class="card mb-4">
             <div class="card-header">Properties List</div>
             <div class="card-body">
@@ -87,24 +68,21 @@
                     <th>Price</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <!-- Property rows will be injected here -->
-                </tbody>
+                <tbody><!-- injected --></tbody>
               </table>
             </div>
           </div>
-          <!-- Form to Add New Property -->
           <div class="card">
             <div class="card-header">Add New Property</div>
             <div class="card-body">
               <form id="propertyForm">
                 <div class="mb-3">
                   <label for="propertyCategory" class="form-label">Category</label>
-                  <input type="text" class="form-control" id="propertyCategory" placeholder="Enter category" required>
+                  <input type="text" class="form-control" id="propertyCategory" required>
                 </div>
                 <div class="mb-3">
                   <label for="propertyDescription" class="form-label">Description</label>
-                  <textarea class="form-control" id="propertyDescription" placeholder="Enter description" rows="3" required></textarea>
+                  <textarea class="form-control" id="propertyDescription" rows="3" required></textarea>
                 </div>
                 <div class="mb-3">
                   <label for="propertyImage" class="form-label">Upload Image</label>
@@ -112,15 +90,15 @@
                 </div>
                 <div class="mb-3">
                   <label for="propertyLocation" class="form-label">Location</label>
-                  <input type="text" class="form-control" id="propertyLocation" placeholder="Enter location" required>
+                  <input type="text" class="form-control" id="propertyLocation" required>
                 </div>
                 <div class="mb-3">
                   <label for="propertyTitle" class="form-label">Title</label>
-                  <input type="text" class="form-control" id="propertyTitle" placeholder="Enter title" required>
+                  <input type="text" class="form-control" id="propertyTitle" required>
                 </div>
                 <div class="mb-3">
                   <label for="propertyPrice" class="form-label">Price</label>
-                  <input type="number" class="form-control" id="propertyPrice" placeholder="Enter price" required>
+                  <input type="number" class="form-control" id="propertyPrice" required>
                 </div>
                 <button type="submit" class="btn btn-success">Add Property</button>
               </form>
@@ -131,107 +109,93 @@
     </div>
   </div>
 
-  <!-- Bootstrap Bundle with Popper -->
+  <!-- Bootstrap & JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Backendless credentials
-    const APP_ID = 'D816E27F-267C-45B1-9932-AE452537BA0E';
-    const REST_API_KEY = '43FDF951-CA7C-4AA1-8CE5-EAEFE8AABBBB';
-    // The table name is assumed to be "Properties"
-    const BASE_URL = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/data/Properties`;
+    const APP_ID        = 'D816E27F-267C-45B1-9932-AE452537BA0E';
+    const REST_API_KEY  = '43FDF951-CA7C-4AA1-8CE5-EAEFE8AABBBB';
+    const BASE_URL      = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/data/Properties`;
 
-    // Fetch and display properties
-    function fetchProperties() {
-      fetch(BASE_URL)
-        .then(response => response.json())
-        .then(data => {
-          // Check if data is an array; if not, try data.data
-          const properties = Array.isArray(data) ? data : (data.data || []);
-          const tbody = document.querySelector("#propertiesTable tbody");
-          tbody.innerHTML = "";
-          properties.forEach(property => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${property.category || ''}</td>
-              <td>${property.description || ''}</td>
-              <td>${property.imageurl ? `<a href="${property.imageurl}" target="_blank">View Image</a>` : ''}</td>
-              <td>${property.location || ''}</td>
-              <td>${property.title || ''}</td>
-              <td>${property.price ? "$" + property.price : ''}</td>
-            `;
-            tbody.appendChild(tr);
-          });
-        })
-        .catch(error => {
-          console.error("Error fetching properties:", error);
+    // Load existing properties
+    async function fetchProperties() {
+      try {
+        const res = await fetch(BASE_URL);
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.data || []);
+        const tbody = document.querySelector('#propertiesTable tbody');
+        tbody.innerHTML = '';
+        list.forEach(p => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${p.category||''}</td>
+            <td>${p.description||''}</td>
+            <td>${p.imageurl?`<a href="${p.imageurl}" target="_blank">View</a>`:''}</td>
+            <td>${p.location||''}</td>
+            <td>${p.title||''}</td>
+            <td>${p.price?`$${p.price}`:''}</td>
+          `;
+          tbody.appendChild(tr);
         });
+      } catch(err) {
+        console.error('Fetch error:', err);
+        alert('Error fetching properties: ' + err.message);
+      }
     }
 
-    // Handle new property form submission with image upload
-    document.getElementById("propertyForm").addEventListener("submit", async function(e) {
+    // Handle form submit
+    document.getElementById('propertyForm').addEventListener('submit', async function(e) {
       e.preventDefault();
+      const category    = this.propertyCategory.value;
+      const description = this.propertyDescription.value;
+      const location    = this.propertyLocation.value;
+      const title       = this.propertyTitle.value;
+      const price       = parseFloat(this.propertyPrice.value);
+      const file        = this.propertyImage.files[0];
 
-      const category = document.getElementById("propertyCategory").value;
-      const description = document.getElementById("propertyDescription").value;
-      const location = document.getElementById("propertyLocation").value;
-      const title = document.getElementById("propertyTitle").value;
-      const price = parseFloat(document.getElementById("propertyPrice").value);
-      const imageFile = document.getElementById("propertyImage").files[0];
+      if (!file) return alert('Please select an image.');
 
-      if (!imageFile) {
-        alert("Please select an image.");
-        return;
-      }
-
-      // Generate a unique file name
-      const fileName = Date.now() + "_" + imageFile.name;
-      // No spacing in the folder name: "propertiesimages"
+      const fileName = Date.now() + '_' + file.name;
       const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/propertiesimages/${fileName}`;
-      console.log("Uploading file...");
-      console.log("Upload URL:", uploadUrl);
 
       try {
-        // Upload image as raw binary using PUT
-        const uploadResponse = await fetch(uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": imageFile.type
-          },
-          body: imageFile
+        // 1) Upload image
+        const upRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file
         });
-
-        if (!uploadResponse.ok) {
-          throw new Error("Image upload failed with status " + uploadResponse.status);
-        }
-        // Construct the image URL (using backendlessappcontent.com domain)
-        const imageUrl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/propertiesimages/${fileName}`;
-        console.log("Image uploaded successfully. URL:", imageUrl);
-
-        // Save the property details along with the image URL
-        const newProperty = { category, description, imageurl: imageUrl, location, title, price };
-        console.log("Saving property:", newProperty);
-
-        const saveResponse = await fetch(BASE_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newProperty)
-        });
-
-        if (!saveResponse.ok) {
-          throw new Error("Property save failed with status " + saveResponse.status);
+        if (!upRes.ok) {
+          const text = await upRes.text();
+          console.error('Upload failed:', upRes.status, text);
+          return alert(`Image upload failed (${upRes.status}): ${text}`);
         }
 
-        alert("Property added successfully!");
+        // 2) Save record
+        const imageurl = `https://backendlessappcontent.com/${APP_ID}/${REST_API_KEY}/files/propertiesimages/${fileName}`;
+        const newProp  = { category, description, imageurl, location, title, price };
+        const saveRes  = await fetch(BASE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newProp)
+        });
+        if (!saveRes.ok) {
+          const text = await saveRes.text();
+          console.error('Save failed:', saveRes.status, text);
+          return alert(`Property save failed (${saveRes.status}): ${text}`);
+        }
+
+        alert('Property added successfully!');
         this.reset();
         fetchProperties();
-      } catch (err) {
-        console.error("Error uploading image or saving property:", err);
-        alert("Error uploading image or saving property.");
+      } catch(err) {
+        console.error('Unexpected error:', err);
+        alert('Unexpected error: ' + err.message);
       }
     });
 
-    // Fetch properties on initial load
-    document.addEventListener("DOMContentLoaded", fetchProperties);
+    // Initial load
+    document.addEventListener('DOMContentLoaded', fetchProperties);
   </script>
 </body>
 </html>
+
