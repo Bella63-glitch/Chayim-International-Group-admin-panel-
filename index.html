@@ -13,7 +13,7 @@
     #sidebar .nav-link.active { background:#343a40; color:#fff; }
     #content { padding:20px; width:100%; }
     .navbar { margin-bottom:20px; }
-    #imagePreview img { max-width:200px; margin-top:10px; }
+    #imagePreview img { max-width:100px; margin:5px; }
   </style>
 </head>
 <body>
@@ -50,7 +50,7 @@
               <table class="table table-striped" id="propertiesTable">
                 <thead>
                   <tr>
-                    <th>Category</th><th>Description</th><th>Image</th>
+                    <th>Category</th><th>Description</th><th>Images</th>
                     <th>Location</th><th>Title</th><th>Price</th><th>Actions</th>
                   </tr>
                 </thead>
@@ -71,9 +71,9 @@
                   <textarea id="propertyDescription" class="form-control" rows="3" required></textarea>
                 </div>
                 <div class="mb-3">
-                  <label class="form-label">Upload Image</label>
-                  <input type="file" id="propertyImage" class="form-control" accept="image/*">
-                  <div id="imagePreview"></div>
+                  <label class="form-label">Upload Images (max 20)</label>
+                  <input type="file" id="propertyImages" class="form-control" accept="image/*" multiple>
+                  <div id="imagePreview" class="d-flex flex-wrap"></div>
                 </div>
                 <div class="mb-3">
                   <label class="form-label">Location</label>
@@ -100,14 +100,32 @@
   <!-- Bootstrap JS bundle -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // ←– your Backendless keys, swapped to match your console
     const APP_ID       = '43FDF951-CA7C-4AA1-8CE5-EAEFE8AABBBB';
     const REST_API_KEY = 'D816E27F-267C-45B1-9932-AE452537BA0E';
     const BASE_URL     = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/data/Properties`;
     const FILE_FOLDER  = 'propertiesimages';
 
-    let currentEditId   = null;
-    let editingImageUrl = '';
+    let currentEditId     = null;
+    let editingImageUrls  = [];
+
+    // Preview selected images
+    document.getElementById('propertyImages').addEventListener('change', function() {
+      const preview = document.getElementById('imagePreview');
+      preview.innerHTML = '';
+      const files = Array.from(this.files).slice(0, 20);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+      if (this.files.length > 20) {
+        alert('You can upload up to 20 images only. Extra files have been ignored.');
+      }
+    });
 
     async function fetchProperties() {
       try {
@@ -118,10 +136,14 @@
         tbody.innerHTML = '';
         list.forEach(p => {
           const tr = document.createElement('tr');
+          // Build links for each image
+          const imgs = (p.imageurls || []).map(url =>
+            `<a href="${url}" target="_blank" class="d-block">View</a>`
+          ).join('');
           tr.innerHTML = `
             <td>${p.category || ''}</td>
             <td>${p.description || ''}</td>
-            <td>${p.imageurl ? `<a href="${p.imageurl}" target="_blank">View</a>` : ''}</td>
+            <td>${imgs}</td>
             <td>${p.location || ''}</td>
             <td>${p.title || ''}</td>
             <td>${p.price ? '$' + p.price : ''}</td>
@@ -163,14 +185,18 @@
         document.getElementById('propertyLocation').value    = data.location;
         document.getElementById('propertyTitle').value       = data.title;
         document.getElementById('propertyPrice').value       = data.price;
-        editingImageUrl = data.imageurl || '';
-        document.getElementById('imagePreview').innerHTML = editingImageUrl
-          ? `<p>Current Image:</p><img src="${editingImageUrl}" alt="">`
-          : '';
+        editingImageUrls = data.imageurls || [];
+        // preview existing images
+        const preview = document.getElementById('imagePreview');
+        preview.innerHTML = '';
+        editingImageUrls.forEach(url => {
+          const img = document.createElement('img');
+          img.src = url;
+          preview.appendChild(img);
+        });
         currentEditId = id;
         document.getElementById('submitBtn').textContent     = 'Update Property';
         document.getElementById('cancelEditBtn').style.display = 'inline-block';
-        // switch to Properties tab if needed
         document.querySelector('a[href="#properties"]').click();
       } catch (err) {
         console.error('Edit load error:', err);
@@ -182,7 +208,7 @@
 
     function resetForm() {
       currentEditId = null;
-      editingImageUrl = '';
+      editingImageUrls = [];
       document.getElementById('propertyForm').reset();
       document.getElementById('imagePreview').innerHTML = '';
       document.getElementById('submitBtn').textContent = 'Add Property';
@@ -191,17 +217,16 @@
 
     document.getElementById('propertyForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const cat  = document.getElementById('propertyCategory').value.trim();
-      const desc = document.getElementById('propertyDescription').value.trim();
-      const loc  = document.getElementById('propertyLocation').value.trim();
-      const tit  = document.getElementById('propertyTitle').value.trim();
-      const pri  = parseFloat(document.getElementById('propertyPrice').value);
-      const file = document.getElementById('propertyImage').files[0];
+      const cat   = document.getElementById('propertyCategory').value.trim();
+      const desc  = document.getElementById('propertyDescription').value.trim();
+      const loc   = document.getElementById('propertyLocation').value.trim();
+      const tit   = document.getElementById('propertyTitle').value.trim();
+      const pri   = parseFloat(document.getElementById('propertyPrice').value);
+      const files = Array.from(document.getElementById('propertyImages').files).slice(0, 20);
 
       try {
-        // decide image URL
-        let imgUrl = editingImageUrl;
-        if (file) {
+        // upload new files
+        const newUrls = await Promise.all(files.map(async file => {
           const fileName  = Date.now() + '_' + file.name;
           const uploadUrl = `https://api.backendless.com/${APP_ID}/${REST_API_KEY}/files/${FILE_FOLDER}/${fileName}`;
           const fd = new FormData();
@@ -209,13 +234,18 @@
           const upRes = await fetch(uploadUrl, { method: 'POST', body: fd });
           if (!upRes.ok) throw new Error(await upRes.text());
           const upData = await upRes.json();
-          imgUrl = upData.fileURL;
-        }
+          return upData.fileURL;
+        }));
+
+        // combine with any existing images when editing
+        const allUrls = currentEditId
+          ? [...editingImageUrls, ...newUrls].slice(0, 20)
+          : newUrls;
 
         const payload = {
           category:    cat,
           description: desc,
-          imageurl:    imgUrl,
+          imageurls:   allUrls,
           location:    loc,
           title:       tit,
           price:       pri
@@ -223,14 +253,12 @@
 
         let res;
         if (currentEditId) {
-          // update
           res = await fetch(`${BASE_URL}/${currentEditId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
         } else {
-          // create
           res = await fetch(BASE_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
